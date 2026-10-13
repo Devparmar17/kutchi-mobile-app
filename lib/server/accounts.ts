@@ -84,13 +84,26 @@ async function load(): Promise<Db> {
   return shared.__kutchAccounts!;
 }
 
-/** Runs one change at a time and writes the file after it, so two requests can't overwrite each other. */
+/** Thrown when the accounts file can't be written, as on a host with a read-only disk. */
+export class StorageError extends Error {}
+
+export const NO_STORAGE = 'Accounts can’t be saved on this server yet, so signing in isn’t available here.';
+
+/**
+ * Runs one change at a time and writes the file after it, so two requests can't overwrite each other.
+ * The change is made on a copy and only kept once it is safely on disk.
+ */
 function update<T>(change: (db: Db) => T | Promise<T>): Promise<T> {
   const run = async () => {
-    const db = await load();
+    const db = structuredClone(await load());
     const result = await change(db);
-    await mkdir(path.dirname(FILE), { recursive: true });
-    await writeFile(FILE, JSON.stringify(db, null, 2));
+    try {
+      await mkdir(path.dirname(FILE), { recursive: true });
+      await writeFile(FILE, JSON.stringify(db, null, 2));
+    } catch {
+      throw new StorageError('the accounts file is not writable');
+    }
+    shared.__kutchAccounts = db;
     shared.__kutchAccountsTime = await fileTime();
     return result;
   };

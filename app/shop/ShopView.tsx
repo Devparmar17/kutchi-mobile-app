@@ -103,7 +103,7 @@ export default function ShopView({ initial }: { initial: ShopFilter }) {
           {!online && all.length > 0 && (
             <p className="notice warn inset">
               <Icon name="clock" size={20} />
-              The shop can’t be reached right now, so prices and stock may be out of date.
+              The shop can’t be reached right now. You can look around, but ordering is paused.
             </p>
           )}
 

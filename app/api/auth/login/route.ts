@@ -1,4 +1,4 @@
-import { logIn } from '@/lib/server/accounts';
+import { NO_STORAGE, StorageError, logIn } from '@/lib/server/accounts';
 import { signIn } from '@/lib/server/session';
 
 export async function POST(request: Request) {
@@ -10,6 +10,11 @@ export async function POST(request: Request) {
   const result = await logIn({ email: body.email, password: body.password });
   if ('error' in result) return Response.json(result, { status: 401 });
 
-  await signIn(result.id, request);
+  try {
+    await signIn(result.id, request);
+  } catch (error) {
+    if (error instanceof StorageError) return Response.json({ error: NO_STORAGE }, { status: 503 });
+    throw error;
+  }
   return Response.json({ user: result.user });
 }

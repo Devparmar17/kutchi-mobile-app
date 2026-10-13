@@ -32,7 +32,8 @@ export async function signIn(accountId: string, request: Request) {
 export async function signOut() {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
-  if (token) await endSession(token);
+  // If the session can't be struck off the file, dropping the cookie still signs this device out.
+  if (token) await endSession(token).catch(() => {});
   store.delete(COOKIE);
 }
 

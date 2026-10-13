@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { DRESSING, MAKERS } from '../catalog';
 import type { CraftId, Maker, MakerId, OrderStatus, Product, Shop } from '../types';
+import { SAMPLE_LISTINGS } from './sample';
 
 // The vendor's studio (the Dashboard app) holds the shawls, their stock and every order.
 // This app asks it for the shop and hands it each order; set DASHBOARD_URL if it runs elsewhere.
@@ -9,7 +10,7 @@ const STUDIO = (process.env.DASHBOARD_URL ?? 'http://localhost:3000').replace(/\
 export const UNREACHABLE = 'The shop can’t be reached right now. Try again in a moment.';
 
 /** A shawl as the studio lists it for buyers. */
-interface Listing {
+export interface Listing {
   id: string;
   name: string;
   description: string;
@@ -118,7 +119,8 @@ function toProduct(l: Listing): Product {
 
 /**
  * The shop as buyers see it. Pass the version the caller already has to get null back
- * when nothing has changed. With the studio out of reach, the shop comes back empty and offline.
+ * when nothing has changed. With the studio out of reach, the shop comes back offline, holding
+ * the sample shawls this app carries so there is still something to look around.
  * One page render asks once, however many of its parts need the shop.
  */
 export const getShop = cache(async (known = 0): Promise<Shop | null> => {
@@ -129,7 +131,7 @@ export const getShop = cache(async (known = 0): Promise<Shop | null> => {
     if (!data.products) return null;
     return { online: true, version: data.version, products: data.products.map(toProduct) };
   } catch {
-    return { online: false, version: 0, products: [] };
+    return { online: false, version: 0, products: SAMPLE_LISTINGS.map(toProduct) };
   }
 });
 
