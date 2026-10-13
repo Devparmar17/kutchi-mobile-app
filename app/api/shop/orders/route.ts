@@ -21,7 +21,7 @@ function parseBag(value: unknown): BagLine[] | null {
   return lines;
 }
 
-/** Places the signed-in buyer's order with the vendor's studio and remembers it with their account. */
+/** Places the signed-in buyer's order, with the vendor's studio when one is attached, and remembers it with their account. */
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return Response.json({ error: 'Log in to place your order.' }, { status: 401 });
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   if (!bag) return Response.json({ error: 'Your bag is empty.' }, { status: 400 });
   const speed = getSpeed(body?.speed as SpeedId);
 
-  // Prices and stock are read fresh from the studio, never taken from the phone.
+  // Prices and stock are read fresh on the server, never taken from the phone.
   const shop = await getShop();
   if (!shop?.online) return Response.json({ error: UNREACHABLE }, { status: 503 });
 
@@ -56,8 +56,7 @@ export async function POST(request: Request) {
   });
   if ('error' in sent) return Response.json({ error: sent.error }, { status: 409 });
 
-  const order: PlacedOrder = {
-    no: sent.no,
+  const order: Omit<PlacedOrder, 'no'> = {
     items: lines.map((l) => ({
       id: l.product.id,
       variant: l.variant,
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
     fee: speed.fee,
     placedAt: Date.now(),
   };
-  await addOrder(session.id, order);
+  const no = await addOrder(session.id, order, sent.no);
 
-  return Response.json({ no: order.no }, { status: 201 });
+  return Response.json({ no }, { status: 201 });
 }

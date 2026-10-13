@@ -14,7 +14,7 @@ const diamonds = (a: string, b: string) =>
   `conic-gradient(from 45deg, ${a} 25%, ${b} 0 50%, ${a} 0 75%, ${b} 0) 0 0 / 18px 18px`;
 
 /**
- * One sample shawl. The first six have a hand-drawn swatch and a maker in the catalog's DRESSING;
+ * One of the app's own shawls. The first six have a hand-drawn swatch and a maker in the catalog's DRESSING;
  * the rest name their artisan and bring their own swatch, as a shawl the vendor adds would.
  */
 const listing = (
@@ -36,8 +36,8 @@ const listing = (
 });
 
 /**
- * The shawls the shop opens with when the vendor's studio can't be reached, three for each craft,
- * so the app can be looked around on its own. They can't be ordered: only the studio takes orders.
+ * The app's own shawls, three for each craft: what the shop sells while no vendor's studio is
+ * attached, and what it falls back to showing when an attached one can't be reached.
  */
 export const SAMPLE_LISTINGS: Listing[] = [
   listing({

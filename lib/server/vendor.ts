@@ -3,9 +3,13 @@ import { DRESSING, MAKERS } from '../catalog';
 import type { CraftId, Maker, MakerId, OrderStatus, Product, Shop } from '../types';
 import { SAMPLE_LISTINGS } from './sample';
 
-// The vendor's studio (the Dashboard app) holds the shawls, their stock and every order.
-// This app asks it for the shop and hands it each order; set DASHBOARD_URL if it runs elsewhere.
-const STUDIO = (process.env.DASHBOARD_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
+// On its own, this app sells the shawls in ./sample and keeps its own orders. Set DASHBOARD_URL
+// (for example http://localhost:3000) to attach the vendor's studio, the Dashboard app: the shawls,
+// their stock and each order's progress then come from there, and every order is handed to it.
+const STUDIO = process.env.DASHBOARD_URL?.replace(/\/+$/, '') || null;
+
+// The app's own shop never changes while it runs, so it stays at one version.
+const OWN_VERSION = 1;
 
 export const UNREACHABLE = 'The shop can’t be reached right now. Try again in a moment.';
 
@@ -48,6 +52,7 @@ const STUDIO_MAKER: Maker = {
 };
 
 function studio(path: string, init?: RequestInit) {
+  if (!STUDIO) throw new Error('no studio is attached');
   return fetch(STUDIO + path, { ...init, cache: 'no-store', signal: AbortSignal.timeout(4000) });
 }
 
@@ -119,11 +124,15 @@ function toProduct(l: Listing): Product {
 
 /**
  * The shop as buyers see it. Pass the version the caller already has to get null back
- * when nothing has changed. With the studio out of reach, the shop comes back offline, holding
- * the sample shawls this app carries so there is still something to look around.
+ * when nothing has changed. With a studio attached but out of reach, the shop comes back offline,
+ * holding the app's own shawls so there is still something to look around.
  * One page render asks once, however many of its parts need the shop.
  */
 export const getShop = cache(async (known = 0): Promise<Shop | null> => {
+  if (!STUDIO) {
+    if (known === OWN_VERSION) return null;
+    return { online: true, version: OWN_VERSION, products: SAMPLE_LISTINGS.map(toProduct) };
+  }
   try {
     const res = await studio(`/api/storefront/products?v=${known}`);
     if (!res.ok) throw new Error(`studio answered ${res.status}`);
@@ -135,12 +144,16 @@ export const getShop = cache(async (known = 0): Promise<Shop | null> => {
   }
 });
 
-/** Hands an order to the studio, which takes the pieces out of stock and gives it a number. */
+/**
+ * Hands an order to the studio, which takes the pieces out of stock and gives it a number.
+ * With no studio attached there is nobody to hand it to: `no` comes back null and the app numbers it.
+ */
 export async function sendOrder(order: {
   customer: string;
   city: string;
   lines: { id: string; qty: number; variant?: string }[];
-}): Promise<{ no: number } | { error: string }> {
+}): Promise<{ no: number | null } | { error: string }> {
+  if (!STUDIO) return { no: null };
   try {
     const res = await studio('/api/storefront/orders', {
       method: 'POST',
@@ -155,8 +168,9 @@ export async function sendOrder(order: {
   }
 }
 
-/** Where the vendor has got to with an order; null when the studio can't say. */
+/** Where the vendor has got to with an order; null when there is no studio to say. */
 export async function orderStatus(no: number): Promise<OrderStatus | null> {
+  if (!STUDIO) return null;
   try {
     const res = await studio(`/api/storefront/orders?id=${encodeURIComponent(`#KS-${no}`)}`);
     if (!res.ok) return null;

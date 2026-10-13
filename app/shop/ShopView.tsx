@@ -100,13 +100,6 @@ export default function ShopView({ initial }: { initial: ShopFilter }) {
 
       <main className="scroll">
         <div className="page bleed gap-28">
-          {!online && all.length > 0 && (
-            <p className="notice warn inset">
-              <Icon name="clock" size={20} />
-              The shop can’t be reached right now. You can look around, but ordering is paused.
-            </p>
-          )}
-
           {featured && !searching && !savedOnly && (
             <Link href={`/shop/${featured.id}`} className="feature inset">
               <div aria-hidden="true" className="feature-art" style={{ background: productSwatch(featured, 'large') }} />

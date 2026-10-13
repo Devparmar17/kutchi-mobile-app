@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { OrderStatus, Shop } from './types';
 
-// The shawls, their prices and their stock belong to the vendor's studio. Each page arrives
-// with the shop as it was when the server rendered it; this keeps it fresh while the app is open.
+// The shawls, their prices and their stock are decided on the server, and by the vendor's studio
+// when one is attached. Each page arrives with the shop as it was when the server rendered it;
+// this keeps it fresh while the app is open.
 const SHOP_POLL_MS = 10_000;
 const ORDER_POLL_MS = 8_000;
 

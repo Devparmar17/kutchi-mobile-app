@@ -1113,7 +1113,6 @@ input::placeholder { color: #6E707B; }
   font-weight: 600;
 }
 
-.notice.warn { margin-block: 0; background: var(--warn-bg); color: var(--warn); }
 .notice svg { flex: none; }
 
 .bag-line { display: flex; gap: 14px; padding: 12px; }

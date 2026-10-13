@@ -26,6 +26,8 @@ interface Db {
   sessions: Record<string, { account: string; expires: number }>;
 }
 
+const FIRST_ORDER_NO = 1001;
+
 /** A sample buyer, so the app can be tried without signing up. Her order is the studio's sample #KS-1042. */
 export const DEMO = { email: 'ananya@example.com', password: 'kutch-demo' };
 
@@ -196,9 +198,13 @@ export async function findSession(token: string): Promise<{ id: string; user: Us
   return account ? { id: account.id, user: toUser(account) } : null;
 }
 
-/** Remembers an order with the buyer who placed it, newest first. */
-export function addOrder(accountId: string, order: PlacedOrder) {
+/** Remembers an order with the buyer who placed it, newest first, and returns its number. */
+export function addOrder(accountId: string, order: Omit<PlacedOrder, 'no'>, no: number | null) {
   return update((db) => {
-    db.accounts.find((a) => a.id === accountId)?.orders.unshift(order);
+    // Without a studio to number it, the order takes the next number after every order so far.
+    const last = Math.max(FIRST_ORDER_NO - 1, ...db.accounts.flatMap((a) => a.orders.map((o) => o.no)));
+    const placed: PlacedOrder = { ...order, no: no ?? last + 1 };
+    db.accounts.find((a) => a.id === accountId)?.orders.unshift(placed);
+    return placed.no;
   });
 }

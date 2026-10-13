@@ -5,7 +5,7 @@ import { lineKey } from './catalog';
 import type { BagLine, State } from './types';
 
 // The bag, saved shawls and course progress are kept in this browser's localStorage.
-// Orders are not: they go to the vendor's studio and are remembered with the buyer's account.
+// Orders are not: they are remembered on the server, with the buyer's account.
 const KEY = 'kutch-shawls-app:v1';
 
 const SEED: State = {
