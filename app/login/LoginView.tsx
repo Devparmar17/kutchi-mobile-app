@@ -11,6 +11,7 @@ const COPY = {
   login: {
     title: 'Welcome back',
     lede: 'Log in to see your orders, your saved shawls and your courses.',
+    note: 'Any email and password will log you in.',
     submit: 'Log in',
     busy: 'Logging in…',
     switchText: 'New to Kutch Shawls?',
@@ -19,6 +20,7 @@ const COPY = {
   signup: {
     title: 'Create your account',
     lede: 'Buy straight from the weavers and follow every order from loom to door.',
+    note: 'Anyone can join.',
     submit: 'Create account',
     busy: 'Creating your account…',
     switchText: 'Already have an account?',
@@ -48,13 +50,19 @@ export default function LoginView({ mode, next }: { mode: Mode; next: string }) 
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!form.password) {
+      setError({ text: 'Enter a password.', field: 'password' });
+      document.getElementById('auth-password')?.focus();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mode === 'login' ? { email: form.email, password: form.password } : form),
+        // The password stays on this screen: no password is checked, so none is sent.
+        body: JSON.stringify(mode === 'login' ? { email: form.email } : { name: form.name, email: form.email, city: form.city }),
       });
       if (res.ok) {
         // A full page load, so every screen is rendered again for the signed-in buyer.
@@ -148,7 +156,6 @@ export default function LoginView({ mode, next }: { mode: Mode; next: string }) 
                   <span className="sr-only"> password</span>
                 </button>
               </div>
-              {mode === 'signup' && <span className="hint">At least 8 characters.</span>}
             </div>
 
             {error && (
@@ -161,6 +168,10 @@ export default function LoginView({ mode, next }: { mode: Mode; next: string }) 
               {busy ? copy.busy : copy.submit}
             </button>
           </form>
+
+          <p className="auth-note">
+            {copy.note} Your account is kept on this device, so it won’t appear on another phone or browser.
+          </p>
 
           <p className="auth-switch">
             {copy.switchText}{' '}

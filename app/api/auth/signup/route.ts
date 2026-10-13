@@ -1,24 +1,26 @@
-import { NO_STORAGE, StorageError, signUp } from '@/lib/server/accounts';
 import { signIn } from '@/lib/server/session';
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '');
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const tidy = (value: unknown) => (typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '');
+
+/** Starts an account for anyone: a name, an email and the city to deliver to. */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const name = tidy(body?.name);
+  const email = tidy(body?.email);
+  const city = tidy(body?.city);
 
-  try {
-    const result = await signUp({
-      name: text(body?.name),
-      email: text(body?.email),
-      city: text(body?.city),
-      password: text(body?.password),
-    });
-    if ('error' in result) return Response.json(result, { status: 400 });
-
-    await signIn(result.id, request);
-    return Response.json({ user: result.user }, { status: 201 });
-  } catch (error) {
-    if (error instanceof StorageError) return Response.json({ error: NO_STORAGE }, { status: 503 });
-    throw error;
+  if (name.length < 2 || name.length > 80) {
+    return Response.json({ error: 'Enter your full name.', field: 'name' }, { status: 400 });
   }
+  if (!EMAIL.test(email) || email.length > 120) {
+    return Response.json({ error: 'Enter a valid email address.', field: 'email' }, { status: 400 });
+  }
+  if (!city || city.length > 60) {
+    return Response.json({ error: 'Enter the city we’ll deliver to.', field: 'city' }, { status: 400 });
+  }
+
+  const user = await signIn(request, { email, name, city });
+  return Response.json({ user }, { status: 201 });
 }

@@ -114,7 +114,7 @@ export default function CheckoutView({ user }: { user: User }) {
                     {user.address.length > 0 ? (
                       user.address.map((line) => <span key={line}>{line}</span>)
                     ) : (
-                      <span>{user.city}</span>
+                      <span>{user.city || 'No delivery address yet'}</span>
                     )}
                   </div>
                   <SoonButton what="Changing the address" className="text-btn">

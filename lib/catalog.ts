@@ -266,7 +266,10 @@ export function journey(status: OrderStatus | null, order: Pick<PlacedOrder, 'pl
       text: finished > 2 ? 'Handed to the courier' : `Expected ${shortDate(order.placedAt + DAY_MS)}`,
     },
     { title: 'Out for delivery', doing: 'On its way to you', text: 'We’ll text you the delivery window' },
-    { title: 'Delivered', text: status === 'Delivered' ? city : `${arrivesBy(order.speed, order.placedAt)} · ${city}` },
+    {
+      title: 'Delivered',
+      text: [status !== 'Delivered' && arrivesBy(order.speed, order.placedAt), city].filter(Boolean).join(' · '),
+    },
   ];
   return steps.map((step, i) => {
     const state = i < finished ? 'done' : i === finished ? 'now' : i === finished + 1 ? 'next' : 'later';

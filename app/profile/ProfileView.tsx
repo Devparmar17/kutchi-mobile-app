@@ -64,7 +64,7 @@ export default function ProfileView({ user, latestStatus }: { user: User; latest
         <div className="col grow">
           <h1 className="profile-name">{user.name}</h1>
           <span className="small muted">
-            {user.city} · Member since {monthYear(user.since)}
+            {user.city && `${user.city} · `}Member since {monthYear(user.since)}
           </span>
         </div>
         <SoonButton what="Editing your profile" label="Edit profile" className="icon-btn">

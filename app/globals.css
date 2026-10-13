@@ -729,6 +729,7 @@ input::placeholder { color: #6E707B; }
 }
 
 .auth { padding-top: 8px; padding-inline: 24px; }
+.auth-note { color: var(--muted); font-size: 13px; text-align: center; text-wrap: pretty; }
 .auth-switch { text-align: center; color: var(--ink-2); }
 .auth-link { display: inline-block; padding: 12px 2px; color: var(--accent); font-weight: 700; }
 

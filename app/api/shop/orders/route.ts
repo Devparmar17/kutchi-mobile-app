@@ -1,6 +1,5 @@
 import { getSpeed, resolveLines } from '@/lib/catalog';
-import { addOrder } from '@/lib/server/accounts';
-import { getSession } from '@/lib/server/session';
+import { getSession, saveOrder } from '@/lib/server/session';
 import { UNREACHABLE, getShop, sendOrder } from '@/lib/server/vendor';
 import type { BagLine, PlacedOrder, SpeedId } from '@/lib/types';
 
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
     fee: speed.fee,
     placedAt: Date.now(),
   };
-  const no = await addOrder(session.id, order, sent.no);
+  const no = await saveOrder(request, session.user, order, sent.no);
 
   return Response.json({ no }, { status: 201 });
 }
