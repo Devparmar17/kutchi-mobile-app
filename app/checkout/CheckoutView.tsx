@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Icon from '@/components/Icon';
-import { SoonButton } from '@/components/ui';
 import {
   PAYMENTS,
   SPEEDS,
+  addressLine,
   arrivesBy,
   getSpeed,
   inr,
@@ -20,14 +20,14 @@ import {
 } from '@/lib/catalog';
 import { refreshShop, useProducts } from '@/lib/shop';
 import { actions, useStore } from '@/lib/store';
-import type { BagLine, SpeedId, User } from '@/lib/types';
+import type { BagLine, PaymentId, SpeedId, User } from '@/lib/types';
 
 export default function CheckoutView({ user }: { user: User }) {
   const router = useRouter();
   const products = useProducts();
-  const { bag } = useStore();
+  const { bag, giftNote } = useStore();
   const [speed, setSpeed] = useState<SpeedId>('standard');
-  const [payment, setPayment] = useState<(typeof PAYMENTS)[number]['id']>('upi');
+  const [payment, setPayment] = useState<PaymentId>('upi');
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
   // Placing the order empties the bag; the paid-for lines stay on screen until the next page loads.
@@ -39,6 +39,7 @@ export default function CheckoutView({ user }: { user: User }) {
   const places = [...new Set(makers.map((m) => m.place))];
   const subtotal = totalOf(lines);
   const fee = getSpeed(speed).fee;
+  const address = user.address;
 
   async function pay() {
     setPaying(true);
@@ -47,7 +48,7 @@ export default function CheckoutView({ user }: { user: User }) {
       const res = await fetch('/api/shop/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lines: bag, speed }),
+        body: JSON.stringify({ lines: bag, speed, pay: payment, giftNote }),
       });
       if (res.status === 401) {
         window.location.assign('/login?next=/checkout');
@@ -107,20 +108,28 @@ export default function CheckoutView({ user }: { user: User }) {
                     Delivery
                   </h2>
                 </div>
-                <div className="card address">
-                  <Icon name="pin" className="muted" />
-                  <div className="col grow address-lines">
-                    <span className="address-name">{user.name}</span>
-                    {user.address.length > 0 ? (
-                      user.address.map((line) => <span key={line}>{line}</span>)
-                    ) : (
-                      <span>{user.city || 'No delivery address yet'}</span>
-                    )}
+                {address ? (
+                  <div className="card address">
+                    <Icon name="pin" className="muted" />
+                    <div className="col grow address-lines">
+                      <span className="address-name">{user.name}</span>
+                      <span>{addressLine(address)}</span>
+                      <span className="muted">{address.phone}</span>
+                    </div>
+                    <Link href="/profile/address?next=/checkout" className="text-btn">
+                      Change
+                    </Link>
                   </div>
-                  <SoonButton what="Changing the address" className="text-btn">
-                    Change
-                  </SoonButton>
-                </div>
+                ) : (
+                  <Link href="/profile/address?next=/checkout" className="card address add">
+                    <Icon name="pin" className="maroon" />
+                    <span className="col grow">
+                      <span className="semi">Add a delivery address</span>
+                      <span className="small muted">Needed before you can pay</span>
+                    </span>
+                    <Icon name="chevron" size={18} strokeWidth={2} className="muted" />
+                  </Link>
+                )}
                 <div className="speed-grid">
                   {SPEEDS.map((o) => (
                     <button
@@ -194,6 +203,15 @@ export default function CheckoutView({ user }: { user: User }) {
                       Edit
                     </Link>
                   </div>
+                  {giftNote && (
+                    <div className="review-note">
+                      <Icon name="gift" size={18} className="maroon" />
+                      <span className="small ink2 grow">“{giftNote}”</span>
+                      <Link href="/bag" className="link small">
+                        Edit
+                      </Link>
+                    </div>
+                  )}
                   <div className="rule" />
                   <div className="sum-row">
                     <span className="muted">Subtotal</span>
@@ -218,9 +236,14 @@ export default function CheckoutView({ user }: { user: User }) {
                 {error}
               </p>
             )}
-            <button type="button" className="btn" disabled={paying} onClick={pay}>
+            {!address && <p className="small muted center">Add a delivery address to place your order.</p>}
+            <button type="button" className="btn" disabled={paying || !address} onClick={pay}>
               <Icon name="lock" size={18} strokeWidth={2} />
-              {paying ? 'Placing your order…' : `Pay ${inr(subtotal + fee)}`}
+              {paying
+                ? 'Placing your order…'
+                : payment === 'cod'
+                  ? `Place order · pay ${inr(subtotal + fee)} on delivery`
+                  : `Pay ${inr(subtotal + fee)}`}
             </button>
           </div>
         </>

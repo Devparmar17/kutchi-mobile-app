@@ -1,15 +1,66 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import Icon from '@/components/Icon';
 import TabBar from '@/components/TabBar';
-import { SoonButton } from '@/components/ui';
 import { arrivesBy, inr, lowerFirst, plural, productSwatch, resolveLines, stockTag, totalOf } from '@/lib/catalog';
 import { useProducts } from '@/lib/shop';
-import { actions, useStore } from '@/lib/store';
+import { MAX_NOTE, actions, useStore } from '@/lib/store';
+
+/** The note printed on handmade paper and tucked into the fold: closed to one line until it's opened. */
+function GiftNote({ note }: { note: string }) {
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button type="button" className="gift" aria-expanded={false} onClick={() => setOpen(true)}>
+        <Icon name="gift" size={22} className="maroon" />
+        <span className="col grow">
+          <span className="semi">{note ? 'Gift note' : 'Add a gift note'}</span>
+          <span className="small muted clip-2">{note || 'Printed on handmade paper and tucked into the fold'}</span>
+        </span>
+        <span className="small semi link">{note ? 'Edit' : 'Add'}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="card gift-edit">
+      <label htmlFor="gift-note" className="semi">
+        Gift note
+      </label>
+      <textarea
+        id="gift-note"
+        rows={4}
+        maxLength={MAX_NOTE}
+        placeholder="Happy birthday, Maa. Woven in Bhujodi, just for you."
+        value={note}
+        onChange={(e) => actions.setGiftNote(e.target.value)}
+        aria-describedby="gift-count"
+        autoFocus
+      />
+      <div className="between">
+        <span id="gift-count" className="tiny muted num">
+          {note.length} of {MAX_NOTE} characters
+        </span>
+        <div className="row-actions">
+          {note && (
+            <button type="button" className="text-btn" onClick={() => actions.setGiftNote('')}>
+              Remove
+            </button>
+          )}
+          <button type="button" className="btn outline sm" onClick={() => setOpen(false)}>
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function BagView() {
-  const { bag } = useStore();
+  const { bag, giftNote } = useStore();
   const lines = resolveLines(bag, useProducts());
   const count = lines.reduce((sum, l) => sum + l.qty, 0);
   const total = totalOf(lines);
@@ -90,14 +141,7 @@ export default function BagView() {
                 })}
               </div>
 
-              <SoonButton what="Adding a gift note" className="gift">
-                <Icon name="gift" size={22} className="maroon" />
-                <span className="col grow">
-                  <span className="semi">Add a gift note</span>
-                  <span className="small muted">Printed on handmade paper and tucked into the fold</span>
-                </span>
-                <Icon name="chevron" size={18} strokeWidth={2} className="muted" />
-              </SoonButton>
+              <GiftNote note={giftNote} />
 
               <section aria-labelledby="h-sum" className="card summary">
                 <h2 id="h-sum" className="summary-title">

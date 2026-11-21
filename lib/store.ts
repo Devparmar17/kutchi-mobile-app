@@ -4,18 +4,14 @@ import { useSyncExternalStore } from 'react';
 import { lineKey } from './catalog';
 import type { BagLine, State } from './types';
 
-// The bag, saved shawls and course progress are kept in this browser's localStorage.
-// Orders are kept with the buyer's account instead, which is a cookie on this device (lib/server/session.ts).
+// The bag, its gift note and saved shawls are kept in this browser's localStorage, so they work before
+// logging in. Orders and courses are kept with the buyer's account instead, a cookie on this device
+// (lib/server/session.ts).
 const KEY = 'kutch-shawls-app:v1';
 
-const SEED: State = {
-  bag: [
-    { id: 'p1', variant: 'indigo', qty: 1 },
-    { id: 'p2', qty: 1 },
-  ],
-  saved: [],
-  lessonDone: false,
-};
+const MAX_NOTE = 200;
+
+const SEED: State = { bag: [], saved: [], giftNote: '' };
 
 let state: State | null = null;
 let listening = false;
@@ -27,11 +23,12 @@ function read(): State {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed?.bag) && Array.isArray(parsed?.saved)) {
-        return { bag: parsed.bag, saved: parsed.saved, lessonDone: parsed.lessonDone === true };
+        const giftNote = typeof parsed.giftNote === 'string' ? parsed.giftNote.slice(0, MAX_NOTE) : '';
+        return { bag: parsed.bag, saved: parsed.saved, giftNote };
       }
     }
   } catch {
-    // Unreadable or blocked storage: fall back to the sample data.
+    // Unreadable or blocked storage: start with an empty bag.
   }
   return SEED;
 }
@@ -102,9 +99,13 @@ export const actions = {
     commit({ ...s, bag: s.bag.filter((l) => lineKey(l) !== key) });
   },
 
-  /** Empties the bag once its order has been placed. */
+  /** Empties the bag, and its gift note, once its order has been placed. */
   clearBag() {
-    commit({ ...getSnapshot(), bag: [] });
+    commit({ ...getSnapshot(), bag: [], giftNote: '' });
+  },
+
+  setGiftNote(text: string) {
+    commit({ ...getSnapshot(), giftNote: text.slice(0, MAX_NOTE) });
   },
 
   toggleSaved(id: string) {
@@ -112,9 +113,6 @@ export const actions = {
     const saved = s.saved.includes(id) ? s.saved.filter((x) => x !== id) : [...s.saved, id];
     commit({ ...s, saved });
   },
-
-  toggleLesson() {
-    const s = getSnapshot();
-    commit({ ...s, lessonDone: !s.lessonDone });
-  },
 };
+
+export { MAX_NOTE };

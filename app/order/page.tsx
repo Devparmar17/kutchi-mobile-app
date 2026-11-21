@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { requireUser } from '@/lib/server/session';
-import { orderStatus } from '@/lib/server/vendor';
+import { hasStudio, orderStatus } from '@/lib/server/vendor';
 import OrderView from './OrderView';
 
 export const metadata: Metadata = { title: 'Your order' };
@@ -20,7 +20,8 @@ export default async function Page({
       key={order?.no}
       user={user}
       order={order}
-      initialStatus={order ? await orderStatus(order.no) : null}
+      initialStatus={order && !order.cancelledAt ? await orderStatus(order.no) : null}
+      canCancel={!hasStudio}
     />
   );
 }

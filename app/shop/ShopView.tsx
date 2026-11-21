@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import Icon, { Heart, Logo, Play, WeaveStrip } from '@/components/Icon';
+import Icon, { Heart, Logo, WeaveStrip } from '@/components/Icon';
 import TabBar from '@/components/TabBar';
 import { Avatar } from '@/components/ui';
 import {
@@ -200,28 +200,19 @@ export default function ShopView({ initial }: { initial: ShopFilter }) {
           </section>
 
           <Link href="/crafts/story" className="card story-card inset">
-            <div aria-hidden="true" className="story-thumb" style={{ background: SW.warp }}>
-              <span className="play-dot">
-                <Play fill="#FFFFFF" />
-              </span>
-            </div>
+            <div aria-hidden="true" className="story-thumb cloth" style={{ background: SW.warp }} />
             <div className="col gap-4">
-              <span className="eyebrow">Craft story · 4 min</span>
               <span className="story-title">How a Bhujodi shawl is made</span>
-              <span className="small muted">Six stages, from Rabari sheep’s wool to the knotted fringe.</span>
+              <span className="small muted">Six stages, from Rabari sheep’s wool to the knotted fringe. A 4-minute read.</span>
             </div>
           </Link>
 
           <Link href="/courses" className="promo inset">
             <WeaveStrip id="weave-shop" />
             <div className="promo-body">
-              <span className="eyebrow gold with-icon">
-                <Icon name="award" size={16} />
-                Certificate courses
-              </span>
               <span className="promo-title">Learn to weave from the people who do it</span>
               <span className="promo-text">
-                Online lessons with Kutch artisans, plus optional visits to their studios.
+                Courses taught by Kutch artisans, with a certificate when you finish.
               </span>
               <span className="promo-cta">
                 Browse courses

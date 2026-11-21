@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Icon, { Play } from '@/components/Icon';
+import Icon from '@/components/Icon';
 import TabBar from '@/components/TabBar';
 import { Avatar } from '@/components/ui';
 import { MAKERS, STORY_MAKER, SW, weave } from '@/lib/catalog';
@@ -33,16 +33,11 @@ export default function Page() {
       <main className="scroll">
         <div className="page bleed gap-26">
           <Link href="/crafts/story" className="card lead-story inset">
-            <div aria-hidden="true" className="lead-art" style={{ background: weave('large') }} />
-            <span className="tag white lead-tag">
-              <Play size={12} />
-              Video · 4:12
-            </span>
+            <div aria-hidden="true" className="lead-art cloth" style={{ background: weave('large') }} />
             <div className="col gap-4 lead-body">
-              <span className="eyebrow">Weaving · Bhujodi</span>
               <span className="lead-title">Bhujodi extra-weft weaving</span>
               <span className="ink2">Wool from Rabari herders’ sheep, woven on pit looms by Vankar families.</span>
-              <span className="small muted lead-meta">6 stages · 4 min read</span>
+              <span className="small muted lead-meta">Six stages, fleece to fringe · 4 min read</span>
             </div>
           </Link>
 

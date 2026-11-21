@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Icon, { Play } from '@/components/Icon';
+import Icon from '@/components/Icon';
 import TabBar from '@/components/TabBar';
-import { Avatar, ShareButton, SoonButton } from '@/components/ui';
-import { COURSE, MAKERS, STORY_MAKER, SW, weave } from '@/lib/catalog';
+import { Avatar, ShareButton } from '@/components/ui';
+import { COURSES, MAKERS, STORY_MAKER, SW, weave } from '@/lib/catalog';
+
+// The weaving course this story's weaver teaches.
+const COURSE = COURSES.find((c) => c.teacher === STORY_MAKER) ?? COURSES[0];
 
 export const metadata: Metadata = { title: 'How it’s made' };
 
@@ -74,19 +77,13 @@ export default function Page() {
 
       <main className="scroll">
         <div className="page bleed gap-24 top-16">
-          <figure className="video inset">
-            <div className="video-frame" style={{ background: weave('large') }}>
-              <SoonButton what="The video" label="Play video, 4 minutes 12 seconds" className="play-btn">
-                <Play size={28} />
-              </SoonButton>
-              <span className="video-time">4:12</span>
-            </div>
-            <figcaption>Filmed at {weaver.name}’s workshop in Bhujodi</figcaption>
-          </figure>
+          <div aria-hidden="true" className="video-frame cloth inset" style={{ background: weave('large') }} />
 
           <div className="col gap-10 pad">
-            <span className="eyebrow">Weaving · Bhujodi</span>
-            <h1 className="title-27">{TITLE}</h1>
+            <div className="col gap-2">
+              <h1 className="title-27">{TITLE}</h1>
+              <span className="small semi maroon">Weaving · Bhujodi, Kutch</span>
+            </div>
             <p className="ink2 pretty">
               Bhujodi is a weaving village about 8 km from Bhuj. Vankar families here have woven wool from Rabari
               herders’ sheep for generations. This is how one shawl comes together.
@@ -139,7 +136,6 @@ export default function Page() {
             <div className="weaver-head">
               <Avatar maker={weaver} size={56} />
               <div className="col">
-                <span className="eyebrow">Meet the weaver</span>
                 <span className="weaver-name">{weaver.name}</span>
                 <span className="small muted">
                   {weaver.role} · {weaver.place}
@@ -156,10 +152,6 @@ export default function Page() {
 
           <Link href={`/courses/${COURSE.id}`} className="promo inset">
             <div className="promo-body roomy">
-              <span className="eyebrow gold with-icon">
-                <Icon name="award" size={16} />
-                Certificate course
-              </span>
               <span className="promo-title">Want to weave one yourself?</span>
               <span className="promo-text">
                 {weaver.name} teaches a 6-week course, with a tabletop loom sent to your home.

@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { OrderItem, PlacedOrder, User } from '../types';
+import type { Address, Enrolment, OrderItem, PaymentId, PlacedOrder, User } from '../types';
 
 // Anyone can sign in: the server keeps no list of accounts and checks no password. A buyer's
-// account (their name, city and orders) is a cookie on their own device, so it needs no database,
-// lasts until they clear their browser, and doesn't follow them to another device.
+// account (their name, address, orders and courses) is a cookie on their own device, so it needs
+// no database, lasts until they clear their browser, and doesn't follow them to another device.
 // It says who the buyer claims to be; nothing here proves it.
 const ACCOUNT = 'ks_account';
 const SIGNED_IN = 'ks_session';
@@ -16,12 +16,14 @@ const ACCOUNT_DAYS = 365;
 // Browsers refuse a cookie much over 4,000 characters, so the oldest orders make way for new ones.
 const MAX_COOKIE = 3600;
 
+const PAYS: PaymentId[] = ['upi', 'card', 'net', 'cod'];
+
 /** The sample buyer from the design; signing in with her email brings her profile and her order. */
 const SAMPLE: User = {
   name: 'Ananya Mehta',
   email: 'ananya@example.com',
   city: 'Pune',
-  address: ['Flat 4B, Shanti Kunj, Baner Road', 'Pune, Maharashtra 411045', '+91 98••• ••210'],
+  address: { line: 'Flat 4B, Shanti Kunj', area: 'Baner Road', city: 'Pune', pin: '411045', phone: '9800000210' },
   since: Date.UTC(2026, 7, 14),
   orders: [
     {
@@ -30,12 +32,16 @@ const SAMPLE: User = {
       speed: 'standard',
       fee: 0,
       placedAt: Date.UTC(2026, 9, 5, 13, 12),
+      pay: 'upi',
+      to: 'Flat 4B, Shanti Kunj, Baner Road, Pune 411045',
     },
   ],
+  courses: [],
 };
 
 const text = (value: unknown, max: number) => (typeof value === 'string' ? value.slice(0, max) : '');
 const count = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0);
+const when = (value: unknown) => (count(value) || undefined);
 
 /** Reads an order back from the cookie, which the buyer's browser could have altered. */
 function toOrder(raw: unknown): PlacedOrder | null {
@@ -55,7 +61,30 @@ function toOrder(raw: unknown): PlacedOrder | null {
     speed: o.speed === 'express' ? 'express' : 'standard',
     fee: count(o.fee),
     placedAt: count(o.placedAt),
+    pay: PAYS.find((p) => p === o.pay),
+    to: text(o.to, 200) || undefined,
+    giftNote: text(o.giftNote, 200) || undefined,
+    cancelledAt: when(o.cancelledAt),
   };
+}
+
+function toAddress(raw: unknown): Address | null {
+  const a = raw as Partial<Address> | null;
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return null;
+  const address = {
+    line: text(a.line, 80),
+    area: text(a.area, 80),
+    city: text(a.city, 60),
+    pin: text(a.pin, 6),
+    phone: text(a.phone, 10),
+  };
+  return address.line && address.city && address.pin ? address : null;
+}
+
+function toEnrolment(raw: unknown): Enrolment | null {
+  const e = raw as Partial<Enrolment> | null;
+  if (!e || typeof e.id !== 'string') return null;
+  return { id: text(e.id, 10), at: count(e.at), done: count(e.done), finishedAt: when(e.finishedAt) };
 }
 
 function decode(value: string | undefined): User | null {
@@ -69,9 +98,10 @@ function decode(value: string | undefined): User | null {
       name,
       email,
       city: text(raw.city, 60),
-      address: Array.isArray(raw.address) ? raw.address.slice(0, 4).map((line: unknown) => text(line, 80)) : [],
+      address: toAddress(raw.address),
       since: count(raw.since),
       orders: Array.isArray(raw.orders) ? raw.orders.flatMap((o: unknown) => toOrder(o) ?? []) : [],
+      courses: Array.isArray(raw.courses) ? raw.courses.slice(0, 10).flatMap((e: unknown) => toEnrolment(e) ?? []) : [],
     };
   } catch {
     return null;
@@ -135,7 +165,7 @@ export async function signIn(request: Request, who: { email: string; name?: stri
   let user: User;
   if (known?.email === email) user = known;
   else if (email === SAMPLE.email) user = SAMPLE;
-  else user = { name: nameFrom(email), email, city: '', address: [], since: Date.now(), orders: [] };
+  else user = { name: nameFrom(email), email, city: '', address: null, since: Date.now(), orders: [], courses: [] };
 
   // Signing up names the buyer and their city; logging in leaves what is already there.
   if (who.name) user = { ...user, name: who.name };
@@ -151,6 +181,11 @@ export async function signOut() {
   (await cookies()).delete(SIGNED_IN);
 }
 
+/** Writes the signed-in buyer's changed account back to their device. */
+export async function saveUser(request: Request, user: User) {
+  keep(await cookies(), request, ACCOUNT, encode(user), ACCOUNT_DAYS);
+}
+
 /**
  * Adds an order to the signed-in buyer's account and returns its number. `no` is the vendor
  * studio's number for it; with no studio attached the order takes the buyer's next number.
@@ -158,11 +193,11 @@ export async function signOut() {
 export async function saveOrder(request: Request, user: User, order: Omit<PlacedOrder, 'no'>, no: number | null) {
   const last = Math.max(SAMPLE.orders[0].no, ...user.orders.map((o) => o.no));
   const placed: PlacedOrder = { ...order, no: no ?? last + 1 };
-  keep(await cookies(), request, ACCOUNT, encode({ ...user, orders: [placed, ...user.orders] }), ACCOUNT_DAYS);
+  await saveUser(request, { ...user, orders: [placed, ...user.orders] });
   return placed.no;
 }
 
 /** Only paths inside this app are followed after logging in. */
-export function safeNext(next: string | undefined) {
-  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/shop';
+export function safeNext(next: string | undefined, fallback = '/shop') {
+  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : fallback;
 }

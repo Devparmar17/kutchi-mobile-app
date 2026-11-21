@@ -1,10 +1,12 @@
 import type {
+  Address,
   BagLine,
   Course,
   CraftId,
   Maker,
   MakerId,
   OrderStatus,
+  PaymentId,
   Palette,
   PlacedOrder,
   Product,
@@ -146,17 +148,11 @@ export const DRESSING: Record<string, Dressing> = {
       { id: 'black', name: 'Black & natural', palette: ['#1E1E22', '#E4D9C3', '#C2483A'] },
     ],
     extras: {
-      rating: { score: '4.8', count: 36 },
       stages: [
         { label: 'Stage 1 · 1 day', title: 'Sorting the Rabari sheep’s wool', swatch: SW.fleece },
         { label: 'Stage 3 · 1 day', title: 'Dyeing the yarn with indigo', swatch: SW.indigoYarn },
         { label: 'Stage 5 · 4 days', title: 'Weaving the motifs by hand', swatch: weave('card') },
       ],
-      review: {
-        who: 'Rohan I. · Delhi',
-        text: 'Warmer than it looks, and the motifs are just as neat on the back. You can tell a person made it.',
-        meta: 'Verified purchase · Indigo & ivory',
-      },
       care: 'Dry clean, or hand wash cold',
     },
   },
@@ -265,7 +261,7 @@ export function journey(status: OrderStatus | null, order: Pick<PlacedOrder, 'pl
       doing: 'Waiting for the courier in Bhuj',
       text: finished > 2 ? 'Handed to the courier' : `Expected ${shortDate(order.placedAt + DAY_MS)}`,
     },
-    { title: 'Out for delivery', doing: 'On its way to you', text: 'We’ll text you the delivery window' },
+    { title: 'Out for delivery', doing: 'On its way to you', text: 'From the courier’s office near you to your door' },
     {
       title: 'Delivered',
       text: [status !== 'Delivered' && arrivesBy(order.speed, order.placedAt), city].filter(Boolean).join(' · '),
@@ -290,6 +286,12 @@ export const PAYMENTS = [
   { id: 'cod', label: 'Cash on delivery', hint: 'Pay when it arrives', tag: '' },
 ] as const;
 
+
+export const paymentLabel = (id: PaymentId | undefined) => PAYMENTS.find((p) => p.id === id)?.label ?? '';
+
+/** "Flat 4B, Shanti Kunj, Baner Road, Pune 411045" */
+export const addressLine = (a: Address) => [a.line, a.area, `${a.city} ${a.pin}`.trim()].filter(Boolean).join(', ');
+
 /* Courses */
 
 export const COURSE_CATS = [
@@ -301,65 +303,153 @@ export const COURSE_CATS = [
 ] as const;
 
 export const COURSES: Course[] = [
-  { id: 'c1', cat: 'weaving', title: 'Bhujodi Weaving Foundations', teacher: 'laxmanbhai', weeks: '6 weeks', level: 'Beginner', format: 'Online + studio visit', rating: '4.9', reviews: 212, price: 6500, swatch: weave('card') },
-  { id: 'c2', cat: 'dyeing', title: 'Natural Dyeing: Indigo and Madder', teacher: 'abdulbhai', weeks: '4 weeks', level: 'Beginner', format: 'Online', rating: '4.8', reviews: 164, price: 3200, swatch: SW.dyes },
-  { id: 'c3', cat: 'printing', title: 'Ajrakh Block Printing', teacher: 'abdulbhai', weeks: '5 weeks', level: 'Intermediate', format: 'Online + studio visit', rating: '4.7', reviews: 98, price: 4800, swatch: SW.ajrakh },
-  { id: 'c4', cat: 'dyeing', title: 'Bandhani: Tying and Dyeing', teacher: 'fatimaben', weeks: '3 weeks', level: 'Beginner', format: 'Online', rating: '4.8', reviews: 131, price: 2400, swatch: SW.bandhani },
-  { id: 'c5', cat: 'embroidery', title: 'Rabari Embroidery Stitches', teacher: 'jasuben', weeks: '4 weeks', level: 'Beginner', format: 'Online', rating: '4.9', reviews: 187, price: 2800, swatch: SW.embroidery },
+  {
+    id: 'c1',
+    cat: 'weaving',
+    title: 'Bhujodi Weaving Foundations',
+    teacher: 'laxmanbhai',
+    weeks: '6 weeks',
+    level: 'Beginner',
+    format: 'Online + studio visit',
+    price: 6500,
+    swatch: weave('card'),
+    about: 'A 6-week course in extra-weft handloom weaving, from setting up the warp to a finished stole sample.',
+    kit: 'A tabletop loom and desi wool kit, posted to your home',
+    facts: [
+      ['Duration', '6 weeks, about 3 hours a week'],
+      ['Format', 'Online, plus an optional 3-day studio visit'],
+      ['Live sessions', 'Saturdays, 10:00 IST'],
+      ['Language', 'Gujarati and Hindi, English subtitles'],
+    ],
+    modules: [
+      { title: 'The loom and its tools', lessons: ['Meet the pit loom', 'Heddles, reed and shuttle', 'Choosing your wool', 'Setting up your tabletop loom'] },
+      { title: 'Setting up the warp', lessons: ['Measuring the warp', 'Starching the threads', 'Winding onto the loom', 'Fixing a broken thread'] },
+      { title: 'Plain weave', lessons: ['Your first rows', 'Keeping the edges straight', 'Beating the weft evenly', 'Weaving stripes'] },
+      { title: 'Extra-weft motifs', lessons: ['Reading a motif', 'Lifting the warp by hand', 'Inserting your first motif', 'Repeating a motif', 'Neat motifs on both sides'] },
+      { title: 'Finishing and the fringe', lessons: ['Taking the piece off the loom', 'Knotting the fringe', 'Washing and pressing'] },
+      { title: 'Final project', full: 'Final project: your own stole sample', lessons: ['Planning your design', 'Weaving your sample', 'Photographing your work'] },
+    ],
+  },
+  {
+    id: 'c2',
+    cat: 'dyeing',
+    title: 'Natural Dyeing: Indigo and Madder',
+    teacher: 'abdulbhai',
+    weeks: '4 weeks',
+    level: 'Beginner',
+    format: 'Online',
+    price: 3200,
+    swatch: SW.dyes,
+    about: 'A 4-week course in dyeing cotton and wool with indigo, madder and iron.',
+    modules: [
+      { title: 'Dyes from plants and minerals', lessons: ['What makes a natural dye', 'Mordants: alum and iron', 'Setting up a safe dye space'] },
+      { title: 'Scouring and mordanting', lessons: ['Scouring cotton and wool', 'Mordanting with alum', 'Testing your mordant'] },
+      { title: 'Madder', lessons: ['Preparing madder root', 'Dyeing reds and pinks', 'Darkening shades with iron'] },
+      { title: 'Indigo', lessons: ['Building an indigo vat', 'Dipping and airing', 'Dark blues from many dips', 'Keeping a vat alive'] },
+      { title: 'Final project', full: 'Final project: a colour card of your own', lessons: ['Planning a colour card', 'Dyeing your samples', 'Mounting the card'] },
+    ],
+  },
+  {
+    id: 'c3',
+    cat: 'printing',
+    title: 'Ajrakh Block Printing',
+    teacher: 'abdulbhai',
+    weeks: '5 weeks',
+    level: 'Intermediate',
+    format: 'Online + studio visit',
+    price: 4800,
+    swatch: SW.ajrakh,
+    about: 'A 5-week course in ajrakh resist printing with wooden blocks and natural dyes.',
+    modules: [
+      { title: 'Ajrakh and its blocks', lessons: ['Where ajrakh comes from', 'Reading the motifs', 'Caring for wooden blocks'] },
+      { title: 'Preparing the cloth', lessons: ['Washing out the starch', 'The harda bath', 'Drying in the sun'] },
+      { title: 'Resist printing', lessons: ['Mixing the resist paste', 'Lining up the block', 'Printing a border'] },
+      { title: 'Dyeing', lessons: ['The indigo dip', 'Washing out the resist', 'The madder boil'] },
+      { title: 'Final project', full: 'Final project: a printed panel', lessons: ['Designing a small panel', 'Printing your panel', 'Washing and finishing'] },
+    ],
+  },
+  {
+    id: 'c4',
+    cat: 'dyeing',
+    title: 'Bandhani: Tying and Dyeing',
+    teacher: 'fatimaben',
+    weeks: '3 weeks',
+    level: 'Beginner',
+    format: 'Online',
+    price: 2400,
+    swatch: SW.bandhani,
+    about: 'A 3-week course in marking, tying and dyeing bandhani dot patterns.',
+    modules: [
+      { title: 'Reading a bandhani design', lessons: ['Dots, waves and lines', 'Marking the cloth', 'Choosing your thread'] },
+      { title: 'Tying', lessons: ['Pinching and tying one dot', 'Tying a row of dots', 'Tying a whole pattern'] },
+      { title: 'Dyeing and opening', lessons: ['Dyeing from light to dark', 'Drying with the knots in', 'Opening the knots'] },
+    ],
+  },
+  {
+    id: 'c5',
+    cat: 'embroidery',
+    title: 'Rabari Embroidery Stitches',
+    teacher: 'jasuben',
+    weeks: '4 weeks',
+    level: 'Beginner',
+    format: 'Online',
+    price: 2800,
+    swatch: SW.embroidery,
+    about: 'A 4-week course in Rabari chain stitch and mirror work.',
+    modules: [
+      { title: 'Threads and cloth', lessons: ['What the motifs mean', 'Choosing thread and needles', 'Framing your cloth'] },
+      { title: 'Chain stitch', lessons: ['The basic chain', 'Curves and circles', 'Filling a motif'] },
+      { title: 'Mirror work', lessons: ['Holding a mirror in place', 'Stitching the mirror frame', 'Mirrors in a row'] },
+      { title: 'Final project', full: 'Final project: a small embroidered panel', lessons: ['Planning your panel', 'Stitching your panel', 'Finishing the edges'] },
+    ],
+  },
 ];
 
-/** The one course with a full syllabus, and the one the learner is enrolled in. */
-export const COURSE = COURSES[0];
+export const courseById = (id: string) => COURSES.find((c) => c.id === id);
 
-export const MODULES = [
-  { title: 'The loom and its tools', lessons: ['Meet the pit loom', 'Heddles, reed and shuttle', 'Choosing your wool', 'Setting up your tabletop loom'] },
-  { title: 'Setting up the warp', lessons: ['Measuring the warp', 'Starching the threads', 'Winding onto the loom', 'Fixing a broken thread'] },
-  { title: 'Plain weave', lessons: ['Your first rows', 'Keeping the edges straight', 'Beating the weft evenly', 'Weaving stripes'] },
-  { title: 'Extra-weft motifs', lessons: ['Reading a motif', 'Lifting the warp by hand', 'Inserting your first motif', 'Repeating a motif', 'Neat motifs on both sides'] },
-  { title: 'Finishing and the fringe', lessons: ['Taking the piece off the loom', 'Knotting the fringe', 'Washing and pressing'] },
-  { title: 'Final project', full: 'Final project: your own stole sample', lessons: ['Planning your design', 'Weaving your sample', 'Photographing your work', 'Submitting for review'] },
-];
+export const lessonCount = (course: Course) => course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
 
-export const LESSON_COUNT = MODULES.reduce((sum, m) => sum + m.lessons.length, 0);
-
-/** What the enrolled course's own page says beyond its card. */
-export const COURSE_DETAIL = {
-  learners: 1040,
-  facts: [
-    ['Duration', '6 weeks, about 3 hours a week'],
-    ['Format', 'Online, plus an optional 3-day studio visit'],
-    ['Live sessions', 'Saturdays, 10:00 IST'],
-    ['Language', 'Gujarati and Hindi, English subtitles'],
-  ],
-  includes: [
-    'A tabletop loom and desi wool kit, delivered to your home',
-    `${LESSON_COUNT} video lessons and ${MODULES.length} live sessions`,
-    `Feedback on your samples from ${MAKERS[COURSE.teacher].name}`,
-    'A certificate with an ID anyone can verify',
-  ],
-  kit: 'Loom kit included',
-};
-
-// Lessons finished before the one that is up next (lesson 15).
-const LESSONS_DONE = 14;
-
-export function courseProgress(lessonDone: boolean) {
-  const done = LESSONS_DONE + (lessonDone ? 1 : 0);
+/** Where a learner has got to: each module's share, and the lesson up next (null once all are done). */
+export function courseProgress(course: Course, doneCount: number) {
+  const total = lessonCount(course);
+  const done = Math.max(0, Math.min(total, doneCount));
   let rest = done;
-  const modules = MODULES.map((m, i) => {
+  const modules = course.modules.map((m, i) => {
     const finished = Math.min(rest, m.lessons.length);
     rest -= finished;
     return { n: i + 1, title: m.title, total: m.lessons.length, done: finished };
   });
-  const current = modules.find((m) => m.done < m.total) ?? modules[modules.length - 1];
+  const current = modules.find((m) => m.done < m.total);
   return {
     done,
-    pct: Math.round((done / LESSON_COUNT) * 100),
+    total,
+    pct: Math.round((done / total) * 100),
     modules,
-    next: {
-      n: done + 1,
-      title: MODULES[current.n - 1].lessons[current.done],
-      module: current.n,
-    },
+    finished: done === total,
+    next: current ? { n: done + 1, title: course.modules[current.n - 1].lessons[current.done], module: current.n } : null,
   };
+}
+
+/** The next Saturday live session, 10:00 to 11:00 IST, as start and end times. */
+export function nextLiveSession(now = Date.now()) {
+  const d = inIndia(now);
+  let days = (6 - d.getUTCDay() + 7) % 7;
+  // Already over today: next week's.
+  if (days === 0 && d.getUTCHours() >= 11) days = 7;
+  const start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days, 4, 30);
+  return { start, end: start + 60 * 60 * 1000 };
+}
+
+/** A certificate's ID: the course, the year it was finished, and four characters from the learner's email. */
+export function certificateId(email: string, courseId: string, finishedAt: number) {
+  let h = 2166136261;
+  for (const ch of `${email}:${courseId}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const tag = (h >>> 0).toString(36).toUpperCase().padStart(4, '0').slice(-4);
+  return `KS-${courseId.toUpperCase()}-${inIndia(finishedAt).getUTCFullYear()}-${tag}`;
+}
+
+/** "16 Nov 2026" */
+export function longDate(time: number) {
+  const d = inIndia(time);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }

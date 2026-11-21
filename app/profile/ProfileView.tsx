@@ -4,17 +4,7 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import Icon, { type IconName } from '@/components/Icon';
 import TabBar from '@/components/TabBar';
-import { SoonButton } from '@/components/ui';
-import {
-  SW,
-  arrivesBy,
-  courseProgress,
-  initials,
-  lowerFirst,
-  monthYear,
-  orderHeadline,
-  productSwatch,
-} from '@/lib/catalog';
+import { SW, addressLine, arrivesBy, initials, lowerFirst, monthYear, orderHeadline, productSwatch } from '@/lib/catalog';
 import { useOrderStatus, useProducts } from '@/lib/shop';
 import { useStore } from '@/lib/store';
 import type { OrderStatus, User } from '@/lib/types';
@@ -26,12 +16,12 @@ function RowBody({ icon, label, hint, value }: { icon: IconName; label: string; 
       {hint ? (
         <span className="col grow">
           <span>{label}</span>
-          <span className="small muted">{hint}</span>
+          <span className="small muted clip">{hint}</span>
         </span>
       ) : (
         <span className="grow">{label}</span>
       )}
-      {value !== undefined && <span className="row-value">{value}</span>}
+      {value !== undefined && <span className="row-value num">{value}</span>}
       <Icon name="chevron" size={16} strokeWidth={2} className="muted" />
     </>
   );
@@ -39,14 +29,15 @@ function RowBody({ icon, label, hint, value }: { icon: IconName; label: string; 
 
 export default function ProfileView({ user, latestStatus }: { user: User; latestStatus: OrderStatus | null }) {
   const products = useProducts();
-  const { saved, lessonDone } = useStore();
+  const { saved } = useStore();
   const [leaving, setLeaving] = useState(false);
 
-  const latest = user.orders[0];
+  const latest = user.orders.find((o) => !o.cancelledAt);
   const status = useOrderStatus(latest?.no, latestStatus);
   const first = latest?.items[0];
   const firstProduct = products.find((p) => p.id === first?.id);
   const savedCount = products.filter((p) => saved.includes(p.id)).length;
+  const certificates = user.courses.filter((e) => e.finishedAt).length;
 
   async function signOut() {
     setLeaving(true);
@@ -67,28 +58,13 @@ export default function ProfileView({ user, latestStatus }: { user: User; latest
             {user.city && `${user.city} · `}Member since {monthYear(user.since)}
           </span>
         </div>
-        <SoonButton what="Editing your profile" label="Edit profile" className="icon-btn">
+        <Link href="/profile/edit" aria-label="Edit your details" className="icon-btn">
           <Icon name="edit" />
-        </SoonButton>
+        </Link>
       </header>
 
       <main className="scroll">
         <div className="page gap-20 top-0">
-          <div className="stat-grid">
-            <Link href="/order" className="card stat">
-              <span className="stat-number">{user.orders.length}</span>
-              <span className="small muted">{user.orders.length === 1 ? 'Order' : 'Orders'}</span>
-            </Link>
-            <Link href="/learn" className="card stat">
-              <span className="stat-number">1</span>
-              <span className="small muted">Course</span>
-            </Link>
-            <Link href="/certificate" className="card stat">
-              <span className="stat-number">1</span>
-              <span className="small muted">Certificate</span>
-            </Link>
-          </div>
-
           {latest && (
             <Link href={`/order?no=${latest.no}`} className="promo track">
               <span
@@ -97,11 +73,10 @@ export default function ProfileView({ user, latestStatus }: { user: User; latest
                 style={{ background: firstProduct ? productSwatch(firstProduct, 'thumb', first?.variant) : SW.warp }}
               />
               <div className="col grow">
-                <span className="eyebrow gold">{status === 'Delivered' ? 'Latest order' : 'On its way'}</span>
                 <span className="semi">{orderHeadline(status)}</span>
                 <span className="small navy-ink">
                   Order #KS-{latest.no}
-                  {status !== 'Delivered' && ` · ${lowerFirst(arrivesBy(latest.speed, latest.placedAt))}`}
+                  {status !== 'Delivered' && ` · arrives ${lowerFirst(arrivesBy(latest.speed, latest.placedAt))}`}
                 </span>
               </div>
               <Icon name="chevron" size={18} strokeWidth={2} />
@@ -119,12 +94,13 @@ export default function ProfileView({ user, latestStatus }: { user: User; latest
               <Link href="/shop?saved=1" className="row">
                 <RowBody icon="heart" label="Saved shawls" value={savedCount} />
               </Link>
-              <SoonButton what="Managing addresses" className="row">
-                <RowBody icon="pin" label="Addresses" />
-              </SoonButton>
-              <SoonButton what="Managing payment methods" className="row">
-                <RowBody icon="card" label="Payment methods" />
-              </SoonButton>
+              <Link href="/profile/address" className="row tall">
+                <RowBody
+                  icon="pin"
+                  label="Delivery address"
+                  hint={user.address ? addressLine(user.address) : 'Not added yet'}
+                />
+              </Link>
             </div>
           </section>
 
@@ -134,30 +110,19 @@ export default function ProfileView({ user, latestStatus }: { user: User; latest
             </h2>
             <div className="card rows">
               <Link href="/learn" className="row">
-                <RowBody icon="courses" label="My courses" value={`${courseProgress(lessonDone).pct}%`} />
+                <RowBody icon="courses" label="My courses" value={user.courses.length} />
               </Link>
               <Link href="/certificate" className="row">
-                <RowBody icon="award" label="Certificates" />
+                <RowBody icon="award" label="Certificates" value={certificates} />
               </Link>
             </div>
           </section>
 
-          <section aria-labelledby="h-pref" className="col gap-8">
-            <h2 id="h-pref" className="group-title">
-              Settings
-            </h2>
-            <div className="card rows">
-              <SoonButton what="Changing the language" className="row tall">
-                <RowBody icon="globe" label="Language" hint="Also in ગુજરાતી and हिन्दी" value="English" />
-              </SoonButton>
-              <SoonButton what="Notification settings" className="row">
-                <RowBody icon="bell" label="Notifications" />
-              </SoonButton>
-              <SoonButton what="Help and support" className="row">
-                <RowBody icon="help" label="Help and support" />
-              </SoonButton>
-            </div>
-          </section>
+          <div className="card rows">
+            <Link href="/help" className="row">
+              <RowBody icon="help" label="Help" />
+            </Link>
+          </div>
 
           <div className="col account-foot">
             <span className="small muted">Signed in as {user.email}</span>

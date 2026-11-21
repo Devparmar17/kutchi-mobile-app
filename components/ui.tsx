@@ -5,30 +5,6 @@ import type { Maker } from '@/lib/types';
 import Icon from './Icon';
 import { toast } from './Toast';
 
-/** A control whose feature has nothing behind it yet: it says so instead of doing nothing. */
-export function SoonButton({
-  what,
-  label,
-  className,
-  children,
-}: {
-  what: string;
-  label?: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={className}
-      aria-label={label}
-      onClick={() => toast(`${what} isn’t available yet`)}
-    >
-      {children}
-    </button>
-  );
-}
-
 /** Opens the phone's share sheet, or copies the page link where there isn't one. */
 export function ShareButton({
   title,

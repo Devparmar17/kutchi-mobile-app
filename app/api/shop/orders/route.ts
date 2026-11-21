@@ -1,9 +1,10 @@
-import { getSpeed, resolveLines } from '@/lib/catalog';
+import { PAYMENTS, addressLine, getSpeed, resolveLines } from '@/lib/catalog';
 import { getSession, saveOrder } from '@/lib/server/session';
 import { UNREACHABLE, getShop, sendOrder } from '@/lib/server/vendor';
-import type { BagLine, PlacedOrder, SpeedId } from '@/lib/types';
+import type { BagLine, PaymentId, PlacedOrder, SpeedId } from '@/lib/types';
 
 const MAX_LINES = 20;
+const MAX_NOTE = 200;
 
 /** Reads the bag sent from checkout, or null when it isn't a well-formed one. */
 function parseBag(value: unknown): BagLine[] | null {
@@ -24,11 +25,18 @@ function parseBag(value: unknown): BagLine[] | null {
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return Response.json({ error: 'Log in to place your order.' }, { status: 401 });
+  const { user } = session;
+  if (!user.address) return Response.json({ error: 'Add a delivery address first.' }, { status: 400 });
 
-  const body = (await request.json().catch(() => null)) as { lines?: unknown; speed?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { lines?: unknown; speed?: unknown; pay?: unknown; giftNote?: unknown }
+    | null;
   const bag = parseBag(body?.lines);
   if (!bag) return Response.json({ error: 'Your bag is empty.' }, { status: 400 });
   const speed = getSpeed(body?.speed as SpeedId);
+  const pay = PAYMENTS.find((p) => p.id === body?.pay)?.id as PaymentId | undefined;
+  if (!pay) return Response.json({ error: 'Choose how you’d like to pay.' }, { status: 400 });
+  const giftNote = typeof body?.giftNote === 'string' ? body.giftNote.trim().slice(0, MAX_NOTE) : '';
 
   // Prices and stock are read fresh on the server, never taken from the phone.
   const shop = await getShop();
@@ -48,8 +56,8 @@ export async function POST(request: Request) {
   }
 
   const sent = await sendOrder({
-    customer: session.user.name,
-    city: session.user.city,
+    customer: user.name,
+    city: user.address.city,
     // The vendor needs the colourway only where the shawl comes in more than one.
     lines: lines.map((l) => ({ id: l.product.id, qty: l.qty, variant: l.product.variants ? l.color : undefined })),
   });
@@ -67,8 +75,11 @@ export async function POST(request: Request) {
     speed: speed.id,
     fee: speed.fee,
     placedAt: Date.now(),
+    pay,
+    to: addressLine(user.address),
+    giftNote: giftNote || undefined,
   };
-  const no = await saveOrder(request, session.user, order, sent.no);
+  const no = await saveOrder(request, user, order, sent.no);
 
   return Response.json({ no }, { status: 201 });
 }

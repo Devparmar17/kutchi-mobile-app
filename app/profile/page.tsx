@@ -7,6 +7,6 @@ export const metadata: Metadata = { title: 'Your profile' };
 
 export default async function Page() {
   const user = await requireUser('/profile');
-  const latest = user.orders[0];
+  const latest = user.orders.find((o) => !o.cancelledAt);
   return <ProfileView user={user} latestStatus={latest ? await orderStatus(latest.no) : null} />;
 }

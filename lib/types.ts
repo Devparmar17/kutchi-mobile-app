@@ -1,6 +1,7 @@
 export type CraftId = 'weave' | 'ajrakh' | 'bandhani' | 'kala' | 'embroidery';
 export type MakerId = 'laxmanbhai' | 'abdulbhai' | 'fatimaben' | 'jasuben' | 'valjibhai';
 export type SpeedId = 'standard' | 'express';
+export type PaymentId = 'upi' | 'card' | 'net' | 'cod';
 
 export interface Maker {
   name: string;
@@ -22,9 +23,7 @@ export interface Variant {
 
 /** The parts of a shawl's page that this app writes itself, for the shawls it knows well. */
 export interface ProductExtras {
-  rating: { score: string; count: number };
   stages: { label: string; title: string; swatch: string }[];
-  review: { who: string; text: string; meta: string };
   care: string;
 }
 
@@ -63,6 +62,13 @@ export interface Shop {
   products: Product[];
 }
 
+export interface Module {
+  title: string;
+  /** The longer title shown in the syllabus, when the short one leaves something out. */
+  full?: string;
+  lessons: string[];
+}
+
 export interface Course {
   id: string;
   cat: 'weaving' | 'dyeing' | 'printing' | 'embroidery';
@@ -71,10 +77,15 @@ export interface Course {
   weeks: string;
   level: string;
   format: string;
-  rating: string;
-  reviews: number;
   price: number;
   swatch: string;
+  /** One sentence for the certificate: what finishing the course means. */
+  about: string;
+  modules: Module[];
+  /** What is posted to the learner, if anything; posting it needs a delivery address. */
+  kit?: string;
+  /** Extra facts for the course page, beyond its length and format. */
+  facts?: [label: string, value: string][];
 }
 
 export interface BagLine {
@@ -102,6 +113,31 @@ export interface PlacedOrder {
   speed: SpeedId;
   fee: number;
   placedAt: number;
+  /** How the buyer chose to pay; missing on orders placed before it was kept. */
+  pay?: PaymentId;
+  /** The address it went to, on one line, as it was on the day. */
+  to?: string;
+  giftNote?: string;
+  cancelledAt?: number;
+}
+
+/** Where a buyer's shawls, and any course kit, are delivered. */
+export interface Address {
+  line: string;
+  area: string;
+  city: string;
+  pin: string;
+  phone: string;
+}
+
+/** A course the buyer has paid for, and how far through it they are. */
+export interface Enrolment {
+  id: string;
+  at: number;
+  /** Lessons finished, counted from the first. */
+  done: number;
+  /** When the last lesson was marked done: the certificate's date. */
+  finishedAt?: number;
 }
 
 /** The signed-in buyer, as the screens see them. */
@@ -109,16 +145,18 @@ export interface User {
   name: string;
   email: string;
   city: string;
-  address: string[];
+  address: Address | null;
   since: number;
   /** Newest first. */
   orders: PlacedOrder[];
+  /** Newest first. */
+  courses: Enrolment[];
 }
 
 /** What this browser remembers between visits. */
 export interface State {
   bag: BagLine[];
   saved: string[];
-  /** Whether lesson 15, the one up next in the enrolled course, is marked done. */
-  lessonDone: boolean;
+  /** Printed on handmade paper and sent with the next order. */
+  giftNote: string;
 }

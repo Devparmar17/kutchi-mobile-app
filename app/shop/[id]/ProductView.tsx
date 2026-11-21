@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import Icon, { Heart, Star } from '@/components/Icon';
+import Icon, { Heart } from '@/components/Icon';
 import { Avatar, ShareButton } from '@/components/ui';
 import { MADE_BY, STORY_MAKER, arrivesBy, chip, inr, lowerFirst, maxOf, plural, productSwatch, stockTag } from '@/lib/catalog';
 import { useShop } from '@/lib/shop';
@@ -83,18 +83,9 @@ export default function ProductView({ id }: { id: string }) {
 
         <div className="page gap-24 product-page">
           <div className="col gap-4">
-            <span className="small bold maroon">{p.line}</span>
             <h1 className="title-26">{p.name}</h1>
-            <div className="between">
-              <span className="price-24">{inr(p.price)}</span>
-              {x && (
-                <a href="#reviews" className="link ink rating">
-                  <Star size={16} />
-                  {x.rating.score}
-                  <span className="rating-count">· {x.rating.count} reviews</span>
-                </a>
-              )}
-            </div>
+            <span className="small semi maroon">{p.line}</span>
+            <span className="price-24">{inr(p.price)}</span>
             <span className="small muted">
               Inclusive of taxes · Free delivery {lowerFirst(arrivesBy('standard'))}
               {tag && !soldOut && <span className="stock-note"> · {tag}</span>}
@@ -223,30 +214,6 @@ export default function ProductView({ id }: { id: string }) {
               ))}
             </dl>
           </section>
-
-          {x && (
-            <section id="reviews" aria-labelledby="h-reviews" className="col gap-10">
-              <div className="between baseline">
-                <h2 id="h-reviews" className="h2 sm">
-                  Reviews
-                </h2>
-                <span className="small muted">{x.rating.count} reviews</span>
-              </div>
-              <div className="card review">
-                <div className="between">
-                  <span className="review-who">{x.review.who}</span>
-                  <span className="stars">
-                    <span className="sr-only">5 out of 5 stars</span>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star key={n} />
-                    ))}
-                  </span>
-                </div>
-                <p className="review-text">{x.review.text}</p>
-                <span className="review-meta">{x.review.meta}</span>
-              </div>
-            </section>
-          )}
 
           <div className="note">
             <Icon name="shield" size={22} />

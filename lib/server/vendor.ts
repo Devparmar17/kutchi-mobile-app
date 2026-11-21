@@ -8,6 +8,9 @@ import { SAMPLE_LISTINGS } from './sample';
 // their stock and each order's progress then come from there, and every order is handed to it.
 const STUDIO = process.env.DASHBOARD_URL?.replace(/\/+$/, '') || null;
 
+/** Whether a vendor's studio is attached. Without one, this app keeps its orders itself, so it can cancel them too. */
+export const hasStudio = STUDIO !== null;
+
 // The app's own shop never changes while it runs, so it stays at one version.
 const OWN_VERSION = 1;
 

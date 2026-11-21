@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import Icon, { Logo } from '@/components/Icon';
-import { SoonButton } from '@/components/ui';
+import { Logo } from '@/components/Icon';
 import { SW, weave } from '@/lib/catalog';
 
 // The stack of folded shawls: left offset, width and height in px, then cloth and fringe.
@@ -42,10 +41,6 @@ export default function Page() {
         <Logo core="#17204B" />
         Kutch Shawls
       </div>
-      <SoonButton what="Changing the language" label="Language: English. Change language" className="lang-btn">
-        <Icon name="globe" size={16} />
-        English
-      </SoonButton>
 
       <div className="welcome-body">
         <div className="col gap-12">
